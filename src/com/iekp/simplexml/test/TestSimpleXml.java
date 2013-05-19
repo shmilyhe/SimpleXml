@@ -13,7 +13,7 @@ public class TestSimpleXml {
 	@Test
 	public void testsimpleXml() throws IOException{
 		
-		SimpleXml xml= SimpleXml.read(new File("D:\\projects\\SimpleXml\\resource\\test.xml"));
+		SimpleXml xml= SimpleXml.read(new File("D:\\projects\\SimpleXmlNew\\trunk\\resource\\test.xml"));
 		
 		System.out.println( xml.g("Ret").g("eric").getAttribute("name"));
 		System.out.println( xml.g("Ret").g("eric").g("books").getParent().getQname());
