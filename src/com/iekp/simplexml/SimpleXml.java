@@ -21,7 +21,7 @@
  * 
  * 遍历所有的BOOK
  * 
- * SimpleXml.read(xml,"utf-8").g("root")..g("books").g("book")。each(new Ieach(){
+ * SimpleXml.read(xml,"utf-8").g("root").g("books").g("book")。each(new Ieach(){
 			public void each(int index,XMLElement el){
 				打印name属性
 				System.out.println(el.g("name").getText());
