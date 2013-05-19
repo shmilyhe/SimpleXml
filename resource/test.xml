@@ -1,0 +1,26 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<Ret Value="0" Msg="">
+	<eric name="myName">
+		<books>
+			<book name ="book1"/>
+			<book name ="book2"/>
+			<book name ="book3"/>
+			<book name ="book4"/>
+			<book name ="book5"/>
+			<book name ="book6"/>
+			<book name ="book7"/>
+			<book name ="book8"/>
+			<book>
+				<name>book9</name>
+			</book>
+		</books>
+		<books>
+			<book name ="book12"/>
+			<book name ="book13"/>
+			<book>
+				<name>book14</name>
+				<eric></eric>
+			</book>
+		</books>
+	</eric>
+</Ret>
