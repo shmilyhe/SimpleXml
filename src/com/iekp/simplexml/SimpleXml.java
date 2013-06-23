@@ -2,6 +2,8 @@
  * 
  * <h1>简单的XML元素类</h1>
  * 由XMLReader。read方法创建
+ * https://github.com/shmilyhe/SimpleXml.git
+ * 使用本类时请保留类的说明和来源
  * 
  * 提供简单的XML操作方法
  * <root>
@@ -42,7 +44,10 @@ import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map.Entry;
+import java.util.Set;
 import java.util.Stack;
 
 import javax.xml.parsers.SAXParser;
@@ -52,6 +57,9 @@ import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 import org.xml.sax.helpers.DefaultHandler;
+
+import com.iekp.simplexml.Ieach;
+
 
 public class SimpleXml extends DefaultHandler{
 	
@@ -64,6 +72,7 @@ public class SimpleXml extends DefaultHandler{
 		FileInputStream finp=null;
 		try{finp = new FileInputStream(file);
 		SimpleXml el=  new SimpleXml().readFrom(finp);
+		el.setRoot(true);
 		return el;
 		}catch(IOException e){
 			return new SimpleXml();
@@ -72,7 +81,7 @@ public class SimpleXml extends DefaultHandler{
 		}
 	}
 	public SimpleXml readFrom(InputStream inp){
-		
+		this.isRoot=true;
 		SAXParserFactory factory = SAXParserFactory.newInstance();  
 		try {
 			SAXParser parser = factory.newSAXParser();
@@ -110,6 +119,7 @@ public class SimpleXml extends DefaultHandler{
 		
 		SimpleXml cur =  new SimpleXml();
 		cur.setQname(qName);
+		cur.setLocalName(localName);
 		if(retEl==null)retEl=cur;
 		tagNameStack.push(cur);
 		if(pre!=null){
@@ -188,6 +198,8 @@ public class SimpleXml extends DefaultHandler{
 	 */
 	private String uri;
 	
+	private String localName;
+	
 	/**
 	 * 标签的类型
 	 */
@@ -212,6 +224,12 @@ public class SimpleXml extends DefaultHandler{
 	 * parent node
 	 */
 	private SimpleXml parent;
+	
+	private int subIndex;
+	
+	private boolean isRoot;
+	
+	private String encoding="utf-8";
 	
 	public SimpleXml getParent() {
 		return parent;
@@ -271,6 +289,27 @@ public class SimpleXml extends DefaultHandler{
 		attributes.put(key, value);
 	}
 	
+	/**
+	 * 属性个数
+	 * @return
+	 */
+	public int getAttributeCount(){
+		if(attributes==null)return 0;
+		return attributes.size();
+	}
+	
+	public String[] getAttributeNames(){
+		if(attributes==null)return null;
+		Set<String> keySet =attributes.keySet();
+		String[] anames = new String[keySet.size()];
+		keySet.toArray(anames);
+		return anames;
+	}
+	public Set<String> getAttributeNamesSet(){
+		if(attributes==null)return new HashSet<String>();
+		return attributes.keySet();
+	}
+	
 	
 	/**
 	 * 增加子元素
@@ -278,7 +317,11 @@ public class SimpleXml extends DefaultHandler{
 	 */
 	public void addSub(SimpleXml el){
 		if(el==null)return;
+		if(el.isRoot()){
+			el=el.g();
+		}
 		if(subElements==null)subElements = new ArrayList<SimpleXml>();
+		el.setSubIndex(subElements.size());
 		subElements.add(el);
 		el.setParent(this);
 	}
@@ -309,9 +352,56 @@ public class SimpleXml extends DefaultHandler{
 		return uri;
 	}
 	
+	public int getSubCount(){
+		if(subElements==null)return 0;
+		return subElements.size();
+	}
+	
+	public SimpleXml getSubElement(int index){
+		if(subElements==null)return null;
+		if(index>=subElements.size())return null;
+		return subElements.get(index);
+	}
+	
 	/**********************************************************************
 	*                             XML操作相关方法                                                                                                  *
 	**********************************************************************/
+	
+	/**
+	 * 获取下一层的节点
+	 * @return
+	 */
+	public SimpleXml g(){
+		SimpleXml curr =this;
+		SimpleXml head =null;
+		SimpleXml flag =null;
+		//System.out.println(name);
+		while(curr!=null){	
+		/**
+		 * 查找子节点
+		 * 
+		 */
+		if(curr.subElements!=null){
+			for(SimpleXml el :curr.subElements){
+				if(head==null){
+					head=el;
+					flag=el;
+				}else{
+					flag.next=el;
+					flag =el;
+				}
+				
+			}
+		}
+		
+		/**
+		 * 从同级的元素中找
+		 */
+		curr=curr.next;
+		}
+		return head==null ? new  SimpleXml():head;
+	}
+	
 	
 	/**
 	 * 选择器
@@ -378,6 +468,24 @@ public class SimpleXml extends DefaultHandler{
 	}
 	
 	/**
+	 * 
+	 * @param qname
+	 * @return
+	 */
+	public List<SimpleXml>sub(String qname){
+		ArrayList<SimpleXml> list = new ArrayList<SimpleXml>();
+		if(this.subElements!=null){
+			for(SimpleXml el :this.subElements){
+				if(qname.equals(el.qName)){
+					list.add(el);
+				}
+			}
+		}
+		return list;
+	}
+	
+	
+	/**
 	 * 迭代器
 	 * @param each
 	 */
@@ -390,5 +498,180 @@ public class SimpleXml extends DefaultHandler{
 			flag=flag.next;
 		}while(flag!=null);
 	}
+	public String getLocalName() {
+		return localName;
+	}
+	public void setLocalName(String localName) {
+		this.localName = localName;
+	}
+	
+	@Override
+	public boolean equals(Object arg0) {
+		// TODO Auto-generated method stub
+		if(arg0 instanceof SimpleXml){
+			SimpleXml el =(SimpleXml)arg0;
+			if(this==el)return true;
+			return c(this,el);
+		}
+		return false;
+	}
+	
+	@Override
+	public int hashCode() {
+		// TODO Auto-generated method stub
+		if(this.qName==null)return 0;
+		return this.qName.hashCode();
+	}
 
+	/**
+	 * 判断本节点名与属性是否完全一样
+	 * @param el
+	 * @return
+	 */
+	public boolean _equals(SimpleXml el){
+		Set<String> leftSet =this.getAttributeNamesSet();
+		Set<String> rightSet =el.getAttributeNamesSet();
+		if(leftSet.size()!=rightSet.size())return false;
+		for(String aname:leftSet){
+			String valueL=this.getAttribute(aname);
+			String valueR=el.getAttribute(aname);
+			if(valueR==null){
+				return false;
+			}else{
+				if(!_quals(valueL,valueR)){
+					return false;
+				}
+				
+			}
+		}
+		return true;
+	}
+	
+	private boolean c(SimpleXml left ,SimpleXml right){
+		if(!_quals(left.qName,right.qName))return false;
+		/**
+		 * 比较attribute
+		 */
+		Set<String> leftSet =left.getAttributeNamesSet();
+		Set<String> rightSet =right.getAttributeNamesSet();
+		if(leftSet.size()!=rightSet.size())return false;
+		for(String aname:leftSet){
+			String valueL=left.getAttribute(aname);
+			String valueR=right.getAttribute(aname);
+			if(valueR==null){
+				return false;
+			}else{
+				if(!_quals(valueL,valueR)){
+					return false;
+				}
+				
+			}
+		}
+		
+		//比较TEXT
+		String leftText= left.getText();
+		String rightText= right.getText();
+		if(!_quals(leftText,rightText)){
+			return false;
+		}
+		
+		/**
+		 * 比较子节点
+		 * 
+		 */
+		 if(left.getSubCount()!=right.getSubCount()){
+			 return false;
+		 }
+		 if(left.getSubCount()!=right.getSubCount())return false;
+		 
+		 /**
+		  * 左与右对比
+		  */
+		 HashSet tmpSet = new HashSet();
+		 for(int i=0;i<left.getSubCount();i++){
+			 SimpleXml el = left.getSubElement(i);
+			 SimpleXml e = right.getSubElement(i);
+			 if(!c(el,e))return false;
+
+		 }
+		 return true;
+
+	}
+	
+	public void toString(StringBuffer sb,SimpleXml e,int level){
+		StringBuffer blank = new StringBuffer();
+		/**
+		 * 处理头
+		 */
+		if(e.isRoot()){
+			sb.append("<?xml version=\"1.0\" encoding=\""+this.encoding+"\" ?>\r\n");
+			
+			if(e.subElements!=null&&e.subElements.size()>0){
+				for(SimpleXml sub:e.subElements){
+					toString(sb,sub,level+1);
+				}
+			}
+			return;
+		}
+		/**
+		 * 处理头结束
+		 */
+		for(int i=0;i<level;i++){
+			blank.append("     ");
+		}
+		sb.append(blank). append("<").append(e.getQname());
+		if(e.attributes!=null&&e.attributes.size()>0){
+			Set<Entry<String,String>> entrySet= e.attributes.entrySet();
+			for(Entry<String,String> entry:entrySet){
+				sb.append(" ").append(entry.getKey()).append("=\"").append(entry.getValue()).append("\" ");
+			}
+		}
+		
+		if(e.subElements!=null&&e.subElements.size()>0){
+			sb.append(">\r\n");
+			for(SimpleXml sub:e.subElements){
+				toString(sb,sub,level+1);
+			}
+			sb.append(blank).append("</").append(e.getQname()).append(">\r\n");
+		}else{
+			if(e.getText()==null ||"".equals((""+e.getText()).trim())){
+				sb.append("/>\r\n");
+			}else{
+				sb.append(">").append(e.getText()).append("</").append(e.getQname()).append(">\r\n");
+			}
+		}
+		
+		
+	} 
+	
+	@Override
+	public String toString() {
+		StringBuffer sb = new StringBuffer();
+		toString(sb,this,0);
+		return sb.toString();
+	}
+	public boolean _quals(String a,String b){
+		a=(""+a).trim();
+		b=(""+b).trim();
+		return a.equals(b);
+	}
+	public int getSubIndex() {
+		return subIndex;
+	}
+	public void setSubIndex(int subIndex) {
+		this.subIndex = subIndex;
+	}
+	public boolean isRoot() {
+		return isRoot;
+	}
+	public void setRoot(boolean isRoot) {
+		this.isRoot = isRoot;
+	}
+	public String getEncoding() {
+		return encoding;
+	}
+	public void setEncoding(String encoding) {
+		this.encoding = encoding;
+	}
+	
 }
